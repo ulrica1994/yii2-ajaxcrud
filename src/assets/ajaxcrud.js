@@ -39,8 +39,8 @@ $(document).ready(function () {
             // If no selected ID's show warning
             modal.show();
             modal.setTitle('没有选中');
-            modal.setContent('You must select item(s) to use this action');
-            modal.addFooterButton("Close", 'btn btn-default', function (button, event) {
+            modal.setContent('你必须选中一条');
+            modal.addFooterButton("关闭", 'btn btn-default', function (button, event) {
                 this.hide();
             });
         } else {
