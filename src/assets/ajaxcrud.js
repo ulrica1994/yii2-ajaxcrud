@@ -38,7 +38,7 @@ $(document).ready(function () {
         if (selectedIds.length == 0) {
             // If no selected ID's show warning
             modal.show();
-            modal.setTitle('No selection');
+            modal.setTitle('没有选中');
             modal.setContent('You must select item(s) to use this action');
             modal.addFooterButton("Close", 'btn btn-default', function (button, event) {
                 this.hide();
