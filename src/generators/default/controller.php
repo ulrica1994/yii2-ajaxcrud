@@ -3,12 +3,13 @@
  * This is the template for generating a CRUD controller class file.
  */
 
+use yii\helpers\Html;
 use yii\helpers\StringHelper;
 use yii\db\ActiveRecordInterface;
 
 
 /* @var $this yii\web\View */
-/* @var $generator yii\gii\generators\crud\Generator */
+/* @var $generator johnitvn\ajaxcrud\generators */
 
 $controllerClass = StringHelper::basename($generator->controllerClass);
 $modelClass = StringHelper::basename($generator->modelClass);
@@ -19,10 +20,14 @@ if ($modelClass === $searchModelClass) {
 
 /* @var $class ActiveRecordInterface */
 $class = $generator->modelClass;
+
 $pks = $class::primaryKey();
 $urlParams = $generator->generateUrlParams();
 $actionParams = $generator->generateActionParams();
 $actionParamComments = $generator->generateActionParamComments();
+
+
+$modelClassLabel = $generator->getClassLabel();
 
 echo "<?php\n";
 ?>
@@ -100,12 +105,11 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
         if($request->isAjax){
             Yii::$app->response->format = Response::FORMAT_JSON;
             return [
-                    'title'=> "<?= $modelClass ?> #".<?= $actionParams ?>,
+                    'title'=> "<?= $generator->generateString($modelClassLabel) ?> #".<?= $actionParams ?>,
                     'content'=>$this->renderAjax('view', [
                         'model' => $this->findModel(<?= $actionParams ?>),
                     ]),
-                    'footer'=> Html::button('关闭',['class'=>'btn btn-default pull-left','data-dismiss'=>"modal"]).
-                            Html::a('修改',['update','<?= substr($actionParams,1) ?>'=><?= $actionParams ?>],['class'=>'btn btn-primary','role'=>'modal-remote'])
+                    'footer'=> $this->getCloseButton() . $this->getUpdateButton($id)
                 ];    
         }else{
             return $this->render('view', [
@@ -130,33 +134,22 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
             *   处理 ajax 请求
             */
             Yii::$app->response->format = Response::FORMAT_JSON;
-            if($request->isGet){
-                return [
-                    'title'=> "新建<?= $modelClass ?>",
-                    'content'=>$this->renderAjax('create', [
-                        'model' => $model,
-                    ]),
-                    'footer'=> Html::button('关闭',['class'=>'btn btn-default pull-left','data-dismiss'=>"modal"]).
-                                Html::button('保存',['class'=>'btn btn-primary','type'=>"submit"])
-        
-                ];         
-            }else if($model->load($request->post()) && $model->save()){
+            $title = <?= $generator->generateString('新建{modelClass}', ['modelClass' => $modelClassLabel]) ?>;
+            if($model->load($request->post()) && $model->save()){
                 return [
                     'forceReload'=>'#crud-datatable-pjax',
-                    'title'=> "新建<?= $modelClass ?>",
-                    'content'=>'<span class="text-success">新建 <?= $modelClass ?> 成功！</span>',
-                    'footer'=> Html::button('关闭',['class'=>'btn btn-default pull-left','data-dismiss'=>"modal"]).
-                            Html::a('继续新建',['create'],['class'=>'btn btn-primary','role'=>'modal-remote'])
+                    'title'=> $title,
+                    'content'=>'<span class="text-success">' . <?= $generator->generateString('新建{modelClass}成功', ['modelClass' => $modelClassLabel]) ?> . '</span>',
+                    'footer'=> $this->getCloseButton() . $this->getCreateMoreButton()
         
                 ];         
             }else{           
                 return [
-                    'title'=> "新建<?= $modelClass ?>",
+                    'title'=> $title,
                     'content'=>$this->renderAjax('create', [
                         'model' => $model,
                     ]),
-                    'footer'=> Html::button('关闭',['class'=>'btn btn-default pull-left','data-dismiss'=>"modal"]).
-                                Html::button('保存',['class'=>'btn btn-primary','type'=>"submit"])
+                    'footer'=> $this->getCloseButton() . $this->getSaveButton()
         
                 ];         
             }
@@ -192,33 +185,23 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
             *   处理 ajax 请求
             */
             Yii::$app->response->format = Response::FORMAT_JSON;
-            if($request->isGet){
-                return [
-                    'title'=>"编辑 <?= $modelClass ?> #".<?= $actionParams ?>,
-                    'content'=>$this->renderAjax('update', [
-                        'model' => $model,
-                    ]),
-                    'footer'=> Html::button('关闭',['class'=>'btn btn-default pull-left','data-dismiss'=>"modal"]).
-                                Html::button('保存',['class'=>'btn btn-primary','type'=>"submit"])
-                ];         
-            }else if($model->load($request->post()) && $model->save()){
+            $title = <?= $generator->generateString('更新{modelClass}', ['modelClass' => $modelClassLabel]) ?> . ' #' . <?= $actionParams ?>;
+            if($model->load($request->post()) && $model->save()){
                 return [
                     'forceReload'=>'#crud-datatable-pjax',
-                    'title'=> "<?= $modelClass ?> #".<?= $actionParams ?>,
+                    'title'=> $title,
                     'content'=>$this->renderAjax('view', [
                         'model' => $model,
                     ]),
-                    'footer'=> Html::button('关闭',['class'=>'btn btn-default pull-left','data-dismiss'=>"modal"]).
-                            Html::a('修改',['update','<?= substr($actionParams,1) ?>'=><?= $actionParams ?>],['class'=>'btn btn-primary','role'=>'modal-remote'])
+                    'footer'=> $this->getCloseButton() . $this->getUpdateButton($id)
                 ];    
             }else{
                  return [
-                    'title'=> "编辑 <?= $modelClass ?> #".<?= $actionParams ?>,
+                    'title'=> $title,
                     'content'=>$this->renderAjax('update', [
                         'model' => $model,
                     ]),
-                    'footer'=> Html::button('关闭',['class'=>'btn btn-default pull-left','data-dismiss'=>"modal"]).
-                                Html::button('保存',['class'=>'btn btn-primary','type'=>"submit"])
+                    'footer'=> $this->getCloseButton() . $this->getSaveButton()
                 ];        
             }
         }else{
@@ -319,5 +302,46 @@ if (count($pks) === 1) {
         } else {
             throw new NotFoundHttpException('请求的页面不存在.');
         }
+    }
+
+    /**
+     * @return string
+     */
+    protected function getCloseButton()
+    {
+        return Html::button(<?= $generator->generateString('关闭') ?>, ['class' => 'btn btn-default pull-left', 'data-dismiss' => "modal"]);
+    }
+
+    /**
+     * @param $id
+     * @return string
+     */
+    protected function getUpdateButton($id)
+    {
+        return Html::a(<?= $generator->generateString('编辑') ?>, ['update', 'id' => $id], ['class' => 'btn btn-primary', 'role' => 'modal-remote']);
+    }
+
+    /**
+     * @return string
+     */
+    protected function getSaveButton()
+    {
+        return Html::button(<?= $generator->generateString('保存') ?>, ['class' => 'btn btn-primary', 'type' => "submit"]);
+    }
+
+    /**
+     * @return string
+     */
+    protected function getCreateButton()
+    {
+        return Html::a(<?= $generator->generateString('新建') ?>, ['create'], ['class' => 'btn btn-primary', 'role' => 'modal-remote']);
+    }
+
+    /**
+     * @return string
+     */
+    protected function getCreateMoreButton()
+    {
+        return Html::a(<?= $generator->generateString('新建更多') ?>, ['create'], ['class' => 'btn btn-primary', 'role' => 'modal-remote']);
     }
 }

@@ -25,7 +25,7 @@ use johnitvn\ajaxcrud\BulkButtonWidget;
 <?= !empty($generator->searchModelClass) ? "/* @var \$searchModel " . ltrim($generator->searchModelClass, '\\') . " */\n" : '' ?>
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-$this->title = <?= $generator->generateString(Inflector::pluralize(Inflector::camel2words(StringHelper::basename($generator->modelClass)))) ?>;
+$this->title = <?= $generator->generateString($generator->getClassLabel()) ?>;
 $this->params['breadcrumbs'][] = $this->title;
 
 CrudAsset::register($this);
@@ -42,9 +42,9 @@ CrudAsset::register($this);
             'toolbar'=> [
                 ['content'=>
                     Html::a('<i class="glyphicon glyphicon-plus"></i>', ['create'],
-                    ['role'=>'modal-remote','title'=> '新建<?= Inflector::pluralize(Inflector::camel2words(StringHelper::basename($generator->modelClass))) ?>','class'=>'btn btn-default']).
+                    ['role'=>'modal-remote','title'=> <?= $generator->generateString('新建{modelClass}', ['modelClass' => $generator->getClassLabel()]) ?>,'class'=>'btn btn-default']).
                     Html::a('<i class="glyphicon glyphicon-repeat"></i>', [''],
-                    ['data-pjax'=>1, 'class'=>'btn btn-default', 'title'=>'刷新列表']).
+                    ['data-pjax'=>1, 'class'=>'btn btn-default', 'title'=><?= $generator->generateString('刷新列表') ?>]).
                     '{toggleData}'.
                     '{export}'
                 ],
@@ -54,18 +54,18 @@ CrudAsset::register($this);
             'responsive' => true,          
             'panel' => [
                 'type' => 'primary', 
-                'heading' => '<i class="glyphicon glyphicon-list"></i> <?= Inflector::pluralize(Inflector::camel2words(StringHelper::basename($generator->modelClass))) ?> listing',
-                'before'=>'<em>* 拖动列边缘可以调整列宽，支持点击标题（蓝色）可以排序</em>',
+                'heading' => '<i class="glyphicon glyphicon-list"></i>&nbsp;&nbsp;'.<?= $generator->generateString('{modelClass}列表', ['modelClass' => $generator->getClassLabel()]) ?>,
+                'before'=>'<em>' . <?= $generator->generateString('* 拖动列边缘可以调整列宽，支持点击标题（蓝色）可以排序') ?> . '</em>',
                 'after'=>BulkButtonWidget::widget([
-                            'buttons'=>Html::a('<i class="glyphicon glyphicon-trash"></i>&nbsp; 批量删除',
+                            'buttons'=>Html::a('<i class="glyphicon glyphicon-trash"></i>&nbsp; ' . <?= $generator->generateString('批量删除') ?>,
                                 ["bulk-delete"] ,
                                 [
                                     "class"=>"btn btn-danger btn-xs",
                                     'role'=>'modal-remote-bulk',
                                     'data-confirm'=>false, 'data-method'=>false,// for overide yii data api
                                     'data-request-method'=>'post',
-                                    'data-confirm-title'=>'确认',
-                                    'data-confirm-message'=>'确定要删除所有选中的记录么？'
+                                    'data-confirm-title'=><?= $generator->generateString('确认') ?>,
+                                    'data-confirm-message'=><?= $generator->generateString('确定要删除所有选中的记录么？') ?>
                                 ]),
                         ]).                        
                         '<div class="clearfix"></div>',

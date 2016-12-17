@@ -17,7 +17,7 @@ use yii\widgets\DetailView;
 /* @var $model <?= ltrim($generator->modelClass, '\\') ?> */
 ?>
 <div class="<?= Inflector::camel2id(StringHelper::basename($generator->modelClass)) ?>-view">
- 
+
     <?= "<?= " ?>DetailView::widget([
         'model' => $model,
         'attributes' => [
