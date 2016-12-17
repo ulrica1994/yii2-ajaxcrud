@@ -9,10 +9,20 @@ use yii\helpers\StringHelper;
 /* @var $model \yii\db\ActiveRecord */
 $model = new $generator->modelClass();
 $safeAttributes = $model->safeAttributes();
+
 if (empty($safeAttributes)) {
     $safeAttributes = $model->attributes();
 }
 
+$skipAttributes = [
+    'created_by',
+    'created_at',
+    'updated_by',
+    'updated_at',
+    'deleted_by',
+    'deleted_at',
+    'is_deleted',
+];
 echo "<?php\n";
 ?>
 use yii\helpers\Html;
@@ -28,16 +38,17 @@ use yii\widgets\ActiveForm;
     <?= "<?php " ?>$form = ActiveForm::begin(); ?>
 
 <?php foreach ($generator->getColumnNames() as $attribute) {
-    if (in_array($attribute, $safeAttributes)) {
+    if (in_array($attribute, $safeAttributes) && !in_array($attribute, $skipAttributes)) {
+
         echo "    <?= " . $generator->generateActiveField($attribute) . " ?>\n\n";
     }
-} ?>  
-	<?='<?php if (!Yii::$app->request->isAjax){ ?>'."\n"?>
-	  	<div class="form-group">
-	        <?= "<?= " ?>Html::submitButton($model->isNewRecord ? <?= $generator->generateString('Create') ?> : <?= $generator->generateString('Update') ?>, ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
-	    </div>
-	<?="<?php } ?>\n"?>
+} ?>
+    <?='<?php if (!Yii::$app->request->isAjax){ ?>'."\n"?>
+        <div class="form-group">
+            <?= "<?= " ?>Html::submitButton($model->isNewRecord ? <?= $generator->generateString('添加') ?> : <?= $generator->generateString('修改') ?>, ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
+        </div>
+    <?="<?php } ?>\n"?>
 
     <?= "<?php " ?>ActiveForm::end(); ?>
-    
+
 </div>

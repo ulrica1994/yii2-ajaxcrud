@@ -33,7 +33,7 @@ return [
     $count = 0;
     foreach ($generator->getColumnNames() as $name) {   
         if ($name=='id'||$name=='created_at'||$name=='updated_at'){
-            echo "    // [\n";
+            echo "    //[\n";
             echo "        // 'class'=>'\kartik\grid\DataColumn',\n";
             echo "        // 'attribute'=>'" . $name . "',\n";
             echo "    // ],\n";
@@ -57,14 +57,14 @@ return [
         'urlCreator' => function($action, $model, $key, $index) { 
                 return Url::to([$action,'<?=substr($actionParams,1)?>'=>$key]);
         },
-        'viewOptions'=>['role'=>'modal-remote','title'=>'View','data-toggle'=>'tooltip'],
-        'updateOptions'=>['role'=>'modal-remote','title'=>'Update', 'data-toggle'=>'tooltip'],
-        'deleteOptions'=>['role'=>'modal-remote','title'=>'Delete', 
+        'viewOptions'=>['role'=>'modal-remote','title'=>'查看','data-toggle'=>'tooltip'],
+        'updateOptions'=>['role'=>'modal-remote','title'=>'编辑', 'data-toggle'=>'tooltip'],
+        'deleteOptions'=>['role'=>'modal-remote','title'=>'删除', 
                           'data-confirm'=>false, 'data-method'=>false,// for overide yii data api
                           'data-request-method'=>'post',
                           'data-toggle'=>'tooltip',
-                          'data-confirm-title'=>'Are you sure?',
-                          'data-confirm-message'=>'Are you sure want to delete this item'], 
+                          'data-confirm-title'=>'确认',
+                          'data-confirm-message'=>'确定删除当前记录么？'], 
     ],
 
 ];   

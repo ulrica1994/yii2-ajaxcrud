@@ -3,12 +3,13 @@
  * This is the template for generating a CRUD controller class file.
  */
 
+use yii\helpers\Html;
 use yii\helpers\StringHelper;
 use yii\db\ActiveRecordInterface;
 
 
 /* @var $this yii\web\View */
-/* @var $generator yii\gii\generators\crud\Generator */
+/* @var $generator johnitvn\ajaxcrud\generators */
 
 $controllerClass = StringHelper::basename($generator->controllerClass);
 $modelClass = StringHelper::basename($generator->modelClass);
@@ -19,10 +20,14 @@ if ($modelClass === $searchModelClass) {
 
 /* @var $class ActiveRecordInterface */
 $class = $generator->modelClass;
+
 $pks = $class::primaryKey();
 $urlParams = $generator->generateUrlParams();
 $actionParams = $generator->generateActionParams();
 $actionParamComments = $generator->generateActionParamComments();
+
+
+$modelClassLabel = $generator->getClassLabel();
 
 echo "<?php\n";
 ?>
@@ -43,7 +48,7 @@ use \yii\web\Response;
 use yii\helpers\Html;
 
 /**
- * <?= $controllerClass ?> implements the CRUD actions for <?= $modelClass ?> model.
+ * <?= $controllerClass ?> 结合 <?= $modelClass ?> model 生成 CRUD 操作.
  */
 class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->baseControllerClass) . "\n" ?>
 {
@@ -64,7 +69,7 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
     }
 
     /**
-     * Lists all <?= $modelClass ?> models.
+     * <?= $modelClass ?> models 记录列表.
      * @return mixed
      */
     public function actionIndex()
@@ -90,7 +95,7 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
 
 
     /**
-     * Displays a single <?= $modelClass ?> model.
+     * 查看一个 <?= $modelClass ?> model 详情.
      * <?= implode("\n     * ", $actionParamComments) . "\n" ?>
      * @return mixed
      */
@@ -100,12 +105,11 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
         if($request->isAjax){
             Yii::$app->response->format = Response::FORMAT_JSON;
             return [
-                    'title'=> "<?= $modelClass ?> #".<?= $actionParams ?>,
+                    'title'=> "<?= $generator->generateString($modelClassLabel) ?> #".<?= $actionParams ?>,
                     'content'=>$this->renderAjax('view', [
                         'model' => $this->findModel(<?= $actionParams ?>),
                     ]),
-                    'footer'=> Html::button('Close',['class'=>'btn btn-default pull-left','data-dismiss'=>"modal"]).
-                            Html::a('Edit',['update','<?= substr($actionParams,1) ?>'=><?= $actionParams ?>],['class'=>'btn btn-primary','role'=>'modal-remote'])
+                    'footer'=> $this->getCloseButton() . $this->getUpdateButton($id)
                 ];    
         }else{
             return $this->render('view', [
@@ -115,9 +119,9 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
     }
 
     /**
-     * Creates a new <?= $modelClass ?> model.
-     * For ajax request will return json object
-     * and for non-ajax request if creation is successful, the browser will be redirected to the 'view' page.
+     * 添加一条<?= $modelClass ?> model的新记录.
+     * 如果是 ajax 请求将返回 JSON 对象
+     * 如果非 ajax 请求，在保存成功后，将跳转到查看详情页面.
      * @return mixed
      */
     public function actionCreate()
@@ -127,42 +131,31 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
 
         if($request->isAjax){
             /*
-            *   Process for ajax request
+            *   处理 ajax 请求
             */
             Yii::$app->response->format = Response::FORMAT_JSON;
-            if($request->isGet){
-                return [
-                    'title'=> "Create new <?= $modelClass ?>",
-                    'content'=>$this->renderAjax('create', [
-                        'model' => $model,
-                    ]),
-                    'footer'=> Html::button('Close',['class'=>'btn btn-default pull-left','data-dismiss'=>"modal"]).
-                                Html::button('Save',['class'=>'btn btn-primary','type'=>"submit"])
-        
-                ];         
-            }else if($model->load($request->post()) && $model->save()){
+            $title = <?= $generator->generateString('新建{modelClass}', ['modelClass' => $modelClassLabel]) ?>;
+            if($model->load($request->post()) && $model->save()){
                 return [
                     'forceReload'=>'#crud-datatable-pjax',
-                    'title'=> "Create new <?= $modelClass ?>",
-                    'content'=>'<span class="text-success">Create <?= $modelClass ?> success</span>',
-                    'footer'=> Html::button('Close',['class'=>'btn btn-default pull-left','data-dismiss'=>"modal"]).
-                            Html::a('Create More',['create'],['class'=>'btn btn-primary','role'=>'modal-remote'])
+                    'title'=> $title,
+                    'content'=>'<span class="text-success">' . <?= $generator->generateString('新建{modelClass}成功', ['modelClass' => $modelClassLabel]) ?> . '</span>',
+                    'footer'=> $this->getCloseButton() . $this->getCreateMoreButton()
         
                 ];         
             }else{           
                 return [
-                    'title'=> "Create new <?= $modelClass ?>",
+                    'title'=> $title,
                     'content'=>$this->renderAjax('create', [
                         'model' => $model,
                     ]),
-                    'footer'=> Html::button('Close',['class'=>'btn btn-default pull-left','data-dismiss'=>"modal"]).
-                                Html::button('Save',['class'=>'btn btn-primary','type'=>"submit"])
+                    'footer'=> $this->getCloseButton() . $this->getSaveButton()
         
                 ];         
             }
         }else{
             /*
-            *   Process for non-ajax request
+            *   处理非 ajax 请求
             */
             if ($model->load($request->post()) && $model->save()) {
                 return $this->redirect(['view', <?= $urlParams ?>]);
@@ -176,9 +169,9 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
     }
 
     /**
-     * Updates an existing <?= $modelClass ?> model.
-     * For ajax request will return json object
-     * and for non-ajax request if update is successful, the browser will be redirected to the 'view' page.
+     * 编辑已存在的 Model: <?= $modelClass ?> .
+     * 如果是 ajax 请求，将返回 JSON 格式
+     * 如果非 ajax 请求，保存成功后将跳转到查看页面.
      * <?= implode("\n     * ", $actionParamComments) . "\n" ?>
      * @return mixed
      */
@@ -189,41 +182,31 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
 
         if($request->isAjax){
             /*
-            *   Process for ajax request
+            *   处理 ajax 请求
             */
             Yii::$app->response->format = Response::FORMAT_JSON;
-            if($request->isGet){
-                return [
-                    'title'=> "Update <?= $modelClass ?> #".<?= $actionParams ?>,
-                    'content'=>$this->renderAjax('update', [
-                        'model' => $model,
-                    ]),
-                    'footer'=> Html::button('Close',['class'=>'btn btn-default pull-left','data-dismiss'=>"modal"]).
-                                Html::button('Save',['class'=>'btn btn-primary','type'=>"submit"])
-                ];         
-            }else if($model->load($request->post()) && $model->save()){
+            $title = <?= $generator->generateString('更新{modelClass}', ['modelClass' => $modelClassLabel]) ?> . ' #' . <?= $actionParams ?>;
+            if($model->load($request->post()) && $model->save()){
                 return [
                     'forceReload'=>'#crud-datatable-pjax',
-                    'title'=> "<?= $modelClass ?> #".<?= $actionParams ?>,
+                    'title'=> $title,
                     'content'=>$this->renderAjax('view', [
                         'model' => $model,
                     ]),
-                    'footer'=> Html::button('Close',['class'=>'btn btn-default pull-left','data-dismiss'=>"modal"]).
-                            Html::a('Edit',['update','<?= substr($actionParams,1) ?>'=><?= $actionParams ?>],['class'=>'btn btn-primary','role'=>'modal-remote'])
+                    'footer'=> $this->getCloseButton() . $this->getUpdateButton($id)
                 ];    
             }else{
                  return [
-                    'title'=> "Update <?= $modelClass ?> #".<?= $actionParams ?>,
+                    'title'=> $title,
                     'content'=>$this->renderAjax('update', [
                         'model' => $model,
                     ]),
-                    'footer'=> Html::button('Close',['class'=>'btn btn-default pull-left','data-dismiss'=>"modal"]).
-                                Html::button('Save',['class'=>'btn btn-primary','type'=>"submit"])
+                    'footer'=> $this->getCloseButton() . $this->getSaveButton()
                 ];        
             }
         }else{
             /*
-            *   Process for non-ajax request
+            *   处理非 ajax 请求
             */
             if ($model->load($request->post()) && $model->save()) {
                 return $this->redirect(['view', <?= $urlParams ?>]);
@@ -236,9 +219,9 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
     }
 
     /**
-     * Delete an existing <?= $modelClass ?> model.
-     * For ajax request will return json object
-     * and for non-ajax request if deletion is successful, the browser will be redirected to the 'index' page.
+     * 删除一条已存在的记录 <?= $modelClass ?> model.
+     * 如果是 ajax 请求，将返回 JSON 格式
+     * 如果非 ajax 请求，保存成功后将跳转到列表页面.
      * <?= implode("\n     * ", $actionParamComments) . "\n" ?>
      * @return mixed
      */
@@ -255,7 +238,7 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
             return ['forceClose'=>true,'forceReload'=>'#crud-datatable-pjax'];
         }else{
             /*
-            *   Process for non-ajax request
+            *   处理非 ajax 请求
             */
             return $this->redirect(['index']);
         }
@@ -264,9 +247,9 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
     }
 
      /**
-     * Delete multiple existing <?= $modelClass ?> model.
-     * For ajax request will return json object
-     * and for non-ajax request if deletion is successful, the browser will be redirected to the 'index' page.
+     * 批量删除已存在的记录 <?= $modelClass ?> model.
+     * 如果是 ajax 请求，将返回 JSON 格式
+     * 如果非 ajax 请求，保存成功后将跳转到查看页面.
      * <?= implode("\n     * ", $actionParamComments) . "\n" ?>
      * @return mixed
      */
@@ -287,7 +270,7 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
             return ['forceClose'=>true,'forceReload'=>'#crud-datatable-pjax'];
         }else{
             /*
-            *   Process for non-ajax request
+            *   处理非 ajax 请求
             */
             return $this->redirect(['index']);
         }
@@ -295,8 +278,8 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
     }
 
     /**
-     * Finds the <?= $modelClass ?> model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
+     * 根据主键查找 <?= $modelClass ?> model.
+     * 如果未找到，将抛出“404”异常.
      * <?= implode("\n     * ", $actionParamComments) . "\n" ?>
      * @return <?=                   $modelClass ?> the loaded model
      * @throws NotFoundHttpException if the model cannot be found
@@ -317,7 +300,48 @@ if (count($pks) === 1) {
         if (($model = <?= $modelClass ?>::findOne(<?= $condition ?>)) !== null) {
             return $model;
         } else {
-            throw new NotFoundHttpException('The requested page does not exist.');
+            throw new NotFoundHttpException('请求的页面不存在.');
         }
+    }
+
+    /**
+     * @return string
+     */
+    protected function getCloseButton()
+    {
+        return Html::button(<?= $generator->generateString('关闭') ?>, ['class' => 'btn btn-default pull-left', 'data-dismiss' => "modal"]);
+    }
+
+    /**
+     * @param $id
+     * @return string
+     */
+    protected function getUpdateButton($id)
+    {
+        return Html::a(<?= $generator->generateString('编辑') ?>, ['update', 'id' => $id], ['class' => 'btn btn-primary', 'role' => 'modal-remote']);
+    }
+
+    /**
+     * @return string
+     */
+    protected function getSaveButton()
+    {
+        return Html::button(<?= $generator->generateString('保存') ?>, ['class' => 'btn btn-primary', 'type' => "submit"]);
+    }
+
+    /**
+     * @return string
+     */
+    protected function getCreateButton()
+    {
+        return Html::a(<?= $generator->generateString('新建') ?>, ['create'], ['class' => 'btn btn-primary', 'role' => 'modal-remote']);
+    }
+
+    /**
+     * @return string
+     */
+    protected function getCreateMoreButton()
+    {
+        return Html::a(<?= $generator->generateString('新建更多') ?>, ['create'], ['class' => 'btn btn-primary', 'role' => 'modal-remote']);
     }
 }

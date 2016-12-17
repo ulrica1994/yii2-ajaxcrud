@@ -14,9 +14,9 @@
 function ModalRemote(modalId) {
 
     this.defaults = {
-        okLabel: "OK",
+        okLabel: "确定",
         executeLabel: "Execute",
-        cancelLabel: "Cancel",
+        cancelLabel: "结束",
         loadingTitle: "Loading"
     };
 
